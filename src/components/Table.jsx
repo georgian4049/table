@@ -17,6 +17,10 @@ const Table = ({ data, columns, rowComponent }) => {
         if (!value) return "";
       }
     }
+    if (Array.isArray(value)) {
+      if (value.length) return value[0];
+      return "";
+    }
     return value;
   };
 
@@ -29,44 +33,39 @@ const Table = ({ data, columns, rowComponent }) => {
     }
   };
 
-  //   const filterData = ()
-
   const applyFilter = (path, val) => {
     const index = filterConfig.findIndex(({ title }) => title === path);
     let _filterConfig = [...filterConfig];
     if (!val) {
-      setFilterConfig(filterConfig.filter((item) => item.title !== path));
+      _filterConfig = filterConfig.filter((item) => item.title !== path);
     } else if (val) {
       if (index !== -1) {
         _filterConfig[index] = { title: path, val: val };
       } else {
         _filterConfig.push({ title: path, val: val });
       }
-      setFilterConfig(_filterConfig);
     }
-
-    const _filtered = filteredData.filter((_data) =>
-      parseValue(_data, path).includes(val)
-    );
+    let _filtered = [...data];
+    if (_filterConfig.length) {
+      _filterConfig.forEach(({ title, val }) => {
+        if (val) {
+          _filtered = [
+            ..._filtered.filter((_data) =>
+              parseValue(_data, title)?.includes(val)
+            ),
+          ];
+        }
+      });
+    } else {
+      _filtered = [...data];
+    }
     setFilteredData(_filtered);
+    setFilterConfig(_filterConfig);
   };
 
   useEffect(() => {
-    if (data.length) setFilteredData(data);
+    if (data.length) setFilteredData([...data]);
   }, [data]);
-
-  useEffect(() => {
-    console.log("-------");
-    let _filteredData = [...data];
-    filterConfig.forEach(({ title, val }) => {
-      _filteredData.push(
-        _filteredData.filter((_data) => parseValue(_data, title).includes(val))
-      );
-    });
-    setFilteredData(_filteredData);
-  }, [filterConfig.length]);
-
-  console.log(filterConfig);
 
   return (
     <table>
